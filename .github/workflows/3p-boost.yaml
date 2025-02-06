@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: AiraYumi/3p-boost
-          ref: main
+          ref: autobuild
           path: .local
       - name: Checkout Remote Repository
         uses: actions/checkout@v4
@@ -46,6 +46,10 @@ jobs:
           DATE_STRING=`date +"%Y-%m-%d"`
           PUSH_TAG="v${BOOST_VERSION}_${DATE_STRING}"
           popd
-          echo "$GITHUB_IO_REPO_DEPLOY_KEY" > ~/deploy_key.pem
+          echo "$GITHUB_DEPLOY_KEY" > ~/deploy_key.pem
+          chmod 600 ~/deploy_key.pem
+          pushd .local
+          git config remote.origin.url "git@github.com:AiraYumi/3p-boost.git"
           git tag ${PUSH_TAG}
           git push origin ${PUSH_TAG}
+          popd
