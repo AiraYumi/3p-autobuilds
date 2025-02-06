@@ -1,0 +1,51 @@
+name: Tag
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Local Repository
+        uses: actions/checkout@v4
+        with:
+          repository: AiraYumi/3p-boost
+          ref: main
+          path: .local
+      - name: Checkout Remote Repository
+        uses: actions/checkout@v4
+        with:
+          repository: secondlife/3p-boost
+          ref: main
+          path: .remote
+      - name: Checkout LIBBOOST Source
+        uses: actions/checkout@v4
+        with:
+          repository: boostorg/boost
+          ref: master
+          submodules: 'recursive'
+          path: .boost
+      - name: Add
+        id: add_tag
+        env:
+          GITHUB_DEPLOY_KEY: ${{ secrets.SECRET_KEY }}
+          GIT_SSH_COMMAND: ssh -i ~/deploy_key.pem -o StrictHostKeyChecking=no -F /dev/null
+        shell: bash
+        run: |
+          pushd .boost
+          ./bootstrap.sh
+          PWD=`pwd`
+          VERSION_HEADER_FILE=`find $PWD -name 'version.hpp' | grep config`
+          VERSION_MACRO="BOOST_LIB_VERSION"
+          cc -DVERSION_HEADER_FILE="\"$VERSION_HEADER_FILE\"" \
+             -DVERSION_MACRO="$VERSION_MACRO" \
+             -o "./version" "../.remote/version.c"
+          BOOST_VERSION=`./version | tr '_' '.'`
+          DATE_STRING=`date +"%Y-%m-%d"`
+          PUSH_TAG="v${BOOST_VERSION}_${DATE_STRING}"
+          popd
+          echo "$GITHUB_IO_REPO_DEPLOY_KEY" > ~/deploy_key.pem
+          git tag ${PUSH_TAG}
+          git push origin ${PUSH_TAG}
