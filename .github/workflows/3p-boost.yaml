@@ -1,7 +1,7 @@
 name: Tag
 on:
   schedule:
-    - cron: '15 9 * * *'
+    - cron: '15 9 * * 0,3'
   push:
     branches: [main]
 jobs:
